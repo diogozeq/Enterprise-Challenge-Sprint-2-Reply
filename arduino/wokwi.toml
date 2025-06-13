@@ -1,0 +1,2 @@
+firmware = "./.pio/build/wokwi/firmware.elf"
+board = "esp32dev" 

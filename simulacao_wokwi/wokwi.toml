@@ -1,0 +1,7 @@
+[wokwi]
+version = 1
+firmware = "../arduino/.pio/build/wokwi/firmware.bin"
+elf = "../arduino/.pio/build/wokwi/firmware.elf"
+debugPort = 4000
+rfc2217ServerPort = 4001
+diagram = "diagram.json"

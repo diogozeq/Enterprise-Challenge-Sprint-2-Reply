@@ -1,0 +1,2 @@
+execucao_id,timestamp_processamento,total_registros,duracao_simulacao_ms,temp_media,temp_min,temp_max,umidade_media,umidade_min,umidade_max,status_normal,status_atencao,status_critico,alertas_temperatura,alertas_umidade,alertas_vibracao
+20250613_150049,2025-06-13T15:00:51.915167,8,35000,25.5375,23.5,29.2,69.875,64.2,78.5,5,0,0,1,0,1
