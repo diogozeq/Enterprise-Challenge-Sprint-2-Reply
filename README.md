@@ -111,8 +111,4 @@ A organização das pastas foi pensada para facilitar a navegação e o entendim
 
 Este projeto representa minha abordagem para resolver um desafio de engenharia de forma completa. Busquei não apenas cumprir os requisitos, mas construir uma solução de ponta a ponta que fosse funcional, robusta e que demonstrasse o valor prático de tecnologias como IoT e Machine Learning. Desde a otimização na coleta de dados no ESP32 até a criação de um dashboard interativo para análise, cada etapa foi planejada e executada com o objetivo de entregar um resultado de alta qualidade.
 
-Agradeço pela oportunidade de desenvolver e apresentar este trabalho.
-
 ---
-
-*Desenvolvido com dedicação e paixão por tecnologia por Diogo Leite Zequini Pinto - RM 565535* 
