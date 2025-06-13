@@ -408,20 +408,28 @@ def main():
         if st.button("🚀 Treinar Modelo Preditivo", type="primary"):
             with st.spinner("Treinando modelo RandomForest..."):
                 fig_cm, fig_fi, model, cm = analyzer.train_predictive_model()
-                
-                st.success("✅ Modelo treinado com sucesso!")
-                
-                col1, col2 = st.columns(2)
-                
-                with col1:
-                    st.subheader("📊 Matriz de Confusão")
-                    st.pyplot(fig_cm)
-                
-                with col2:
-                    st.subheader("🎯 Importância das Features")
-                    st.pyplot(fig_fi)
-                
-                st.info("💾 Modelo salvo em: `dados_simulacao/modelo_randomforest.joblib`")
+
+                # Armazena resultados no session_state para persistir entre reruns
+                st.session_state.model_trained = True
+                st.session_state.fig_cm = fig_cm
+                st.session_state.fig_fi = fig_fi
+                st.session_state.model_path = "dados_simulacao/modelo_randomforest.joblib"
+
+        # Exibe resultados se o modelo já foi treinado anteriormente
+        if 'model_trained' in st.session_state and st.session_state.model_trained:
+            st.success("✅ Modelo treinado com sucesso!")
+
+            col1, col2 = st.columns(2)
+
+            with col1:
+                st.subheader("📊 Matriz de Confusão")
+                st.pyplot(st.session_state.fig_cm)
+
+            with col2:
+                st.subheader("🎯 Importância das Features")
+                st.pyplot(st.session_state.fig_fi)
+
+            st.info(f"💾 Modelo salvo em: `{st.session_state.model_path}`")
     
     with tab4:
         st.header("📊 Dados Brutos")

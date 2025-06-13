@@ -49,7 +49,7 @@ bool ledState = false;
 int blinkCount = 0;
 int maxBlinks = 0;
 unsigned long blinkInterval = 0;
-String currentLedStatus = "NORMAL";
+char currentLedStatus[10] = "NORMAL";
 
 // === PROTÓTIPOS DAS FUNÇÕES ===
 void printSystemInfo();
@@ -306,13 +306,15 @@ void sendTelemetryData() {
 
 // === CAPA-FW-003: LED NÃO-BLOQUEANTE ===
 void configureLedPattern(const char* newStatus) {
-  if (strcmp(currentLedStatus.c_str(), newStatus) != 0) {
-    currentLedStatus = newStatus;
+  if (strcmp(currentLedStatus, newStatus) != 0) {
+    strncpy(currentLedStatus, newStatus, sizeof(currentLedStatus) - 1);
+    currentLedStatus[sizeof(currentLedStatus) - 1] = '\0';
+
     blinkCount = 0; // Reseta a contagem
-    
-    if (strcmp(newStatus, "NORMAL") == 0) maxBlinks = 1; // 1 piscada para NORMAL
-    else if (strcmp(newStatus, "ATENÇÃO") == 0) maxBlinks = 2 * 2; // 2 ciclos on/off para ATENÇÃO
-    else maxBlinks = 5 * 2; // 5 ciclos on/off para CRÍTICO
+
+    if (strcmp(newStatus, "NORMAL") == 0) maxBlinks = 1 * 2;     // 1 ciclo on/off (2 alternâncias)
+    else if (strcmp(newStatus, "ATENÇÃO") == 0) maxBlinks = 2 * 2; // 2 ciclos on/off (4 alternâncias)
+    else maxBlinks = 5 * 2;                                         // 5 ciclos on/off (10 alternâncias)
 
     lastBlinkTime = 0; // Força a piscada imediata
   }
@@ -325,7 +327,7 @@ void handleLedBlinking() {
   }
 
   unsigned long currentTime = millis();
-  unsigned long interval = (strcmp(currentLedStatus.c_str(), "ATENÇÃO") == 0) ? 150 : 100;
+  unsigned long interval = (strcmp(currentLedStatus, "ATENÇÃO") == 0) ? 150 : 100;
 
   if (currentTime - lastBlinkTime >= interval) {
     ledState = !ledState;
