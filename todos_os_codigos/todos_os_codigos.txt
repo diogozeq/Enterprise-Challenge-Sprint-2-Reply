@@ -1,0 +1,1802 @@
+================================================================================
+HERMES REPLY - ENTERPRISE CHALLENGE SPRINT 2
+Autor: Diogo Leite Zequini Pinto - RM: 565535
+Todos os códigos e arquivos de texto do projeto concatenados
+================================================================================
+
+
+============================================================
+ARQUIVO: .gitignore
+============================================================
+
+.pio
+.vscode/.browse.c_cpp.db*
+.vscode/c_cpp_properties.json
+.vscode/launch.json
+.vscode/ipch
+
+
+
+============================================================
+ARQUIVO: hermes-reply-iot-sensor.code-workspace
+============================================================
+
+{
+	"folders": [
+		{
+			"name": "hermes-reply-iot-sensor",
+			"path": "."
+		}
+	],
+	"settings": {}
+}
+
+
+============================================================
+ARQUIVO: README.md
+============================================================
+
+# 🚀 Projeto Hermes: Manutenção Preditiva IoT para o Enterprise Challenge
+
+**Desenvolvedor:** Diogo Leite Zequini Pinto | **RM:** 565535
+
+---
+
+## 💡 1. Visão Geral e Objetivos do Projeto
+
+Este projeto é a minha solução para a segunda etapa do Enterprise Challenge, desenvolvido em parceria com a Hermes Reply. Meu objetivo foi construir um protótipo funcional de um sistema de monitoramento IoT para manutenção preditiva, indo além de uma simples coleta de dados.
+
+A solução abrange todo o ciclo de vida dos dados: desde a simulação de um dispositivo embarcado (ESP32) que coleta e pré-processa informações de sensores, até um pipeline de análise em Python. Este pipeline não apenas visualiza os dados, mas também aplica um modelo de Machine Learning para prever o estado do sistema e ajudar no diagnóstico de falhas. Para tornar a análise mais acessível e poderosa, finalizei o projeto com um dashboard de Business Intelligence (BI) interativo, desenvolvido em Streamlit.
+
+---
+
+## 🛠️ 2. Arquitetura da Solução
+
+Desenvolvi o projeto de forma modular, com cada componente tendo uma responsabilidade clara e otimizada.
+
+### 2.1. Hardware Simulado: Circuito Virtual no Wokwi
+
+Para simular um dispositivo de monitoramento real, montei o circuito no Wokwi. A escolha dos sensores foi baseada na sua relevância para cenários industriais:
+
+*   **DHT22 (Temperatura e Umidade):** Fundamental para monitorar as condições operacionais do equipamento e do ambiente.
+*   **LDR (Luminosidade):** Simula um sensor ambiental que pode ser útil para análises de contexto ou segurança.
+*   **Potenciômetro (Vibração):** A vibração é um dos indicadores mais críticos de falha mecânica. Utilizei um potenciômetro para simular diferentes níveis de intensidade, essenciais para a análise preditiva.
+
+*O esquema do circuito está disponível em: `documentacao/imagens/hermes_reply_circuito_wokwi.png`*
+
+### 2.2. Firmware: Inteligência na Borda com ESP32
+
+O código para o ESP32 (`arduino/src/main.cpp`) é responsável pela coleta e preparação dos dados na fonte.
+
+*   **Leitura e Estruturação:** A cada 5 segundos, o firmware lê os valores dos sensores e os organiza em um payload JSON estruturado.
+*   **Cálculo de Média Móvel:** Implementei um cálculo de média móvel para temperatura e umidade para suavizar ruídos e fornecer uma visão de tendência mais estável, importante para a análise.
+*   **Payload de Dados:** Os dados são transmitidos via Serial em um formato JSON completo, incluindo metadados do dispositivo, valores instantâneos, médias móveis e uma análise de status inicial baseada em regras.
+
+**Exemplo da Saída de Dados:**
+```json
+JSON_DATA: {"deviceId":"HR-PRED-MAINT-01","timestamp":5110,"sensors":{"temperature":{"value":26.6,"movingAverage":25.8},"humidity":{"value":78.4,"movingAverage":65.2}, ...}}
+```
+
+### 2.3. Análise de Dados: Pipeline em Python
+
+O script `analise_dados/app.py` centraliza todo o fluxo de processamento e análise dos dados.
+
+1.  **Ingestão Automatizada:** O script lê o arquivo de log (`dados_simulacao/serial_output.log`) e extrai automaticamente os payloads JSON gerados pela simulação.
+2.  **Engenharia de Features:** Para aumentar o poder preditivo, criei novas variáveis (features) a partir dos dados brutos. Por exemplo, calculei o desvio padrão da vibração em uma janela de tempo para identificar instabilidades e a interação entre temperatura e vibração para detectar sobrecargas.
+3.  **Modelagem Preditiva (Machine Learning):** Utilizei um `RandomForestClassifier` para treinar um modelo que aprende a classificar o estado do sistema (`NORMAL`, `ATENÇÃO`, `CRÍTICO`) com base nos padrões dos dados.
+4.  **Diagnóstico de Causa Raiz:** Através da análise de "Feature Importance" do modelo, é possível identificar quais sensores e comportamentos mais influenciaram um alerta, auxiliando no diagnóstico da causa raiz do problema.
+
+### 2.4. Interface de BI: Dashboard Interativo com Streamlit
+
+Para apresentar os resultados de forma clara e interativa, desenvolvi um dashboard web com Streamlit.
+
+*   **Interface Organizada:** O layout utiliza abas para separar as diferentes seções da análise (Visão Geral, Análise de Sensores, Análise Preditiva).
+*   **KPIs e Visualizações:** Métricas importantes são exibidas de forma destacada, e todos os gráficos (temporais, de status, correlações) são gerados dinamicamente para a análise do usuário.
+*   **Resultados do ML:** A performance do modelo (Matriz de Confusão) e a análise de causa raiz (Importância das Features) são apresentadas de forma visual e de fácil compreensão.
+*   **Exploração de Dados:** Há uma seção dedicada para visualizar a tabela de dados completa, permitindo uma análise mais aprofundada.
+
+---
+
+## 🚀 3. Como Executar o Projeto
+
+Preparei um script para simplificar a execução do projeto.
+
+### 3.1. Método Simplificado (Recomendado)
+
+Na raiz do projeto, execute o script `run_dashboard.bat`.
+
+```bash
+.\run_dashboard.bat
+```
+
+Este script irá:
+1.  Verificar e instalar as dependências Python necessárias a partir do `requirements.txt`.
+2.  Iniciar o dashboard web com o Streamlit.
+3.  Abrir o dashboard automaticamente no seu navegador.
+
+### 3.2. Método Manual
+
+Caso prefira, você pode executar os passos manualmente:
+
+1.  **Simulação do Hardware (Wokwi CLI):**
+    *   Execute a simulação do Wokwi para gerar o arquivo de log `dados_simulacao/serial_output.log`.
+2.  **Análise de Dados (Python):**
+    *   Navegue até a raiz do projeto em um terminal.
+    *   Instale as dependências: `pip install -r analise_dados/requirements.txt`
+    *   Inicie o dashboard: `streamlit run analise_dados/app.py`
+
+---
+
+## 📦 4. Estrutura do Repositório
+
+A organização das pastas foi pensada para facilitar a navegação e o entendimento do projeto.
+
+```
+.
+├── arduino/                  # Código-fonte do firmware para o ESP32
+├── analise_dados/            # Pipeline de análise e o dashboard de BI
+├── dados_simulacao/          # Arquivos gerados pela simulação e análise
+├── documentacao/             # Imagens e relatórios
+├── simulacao_wokwi/          # Arquivos de configuração da simulação Wokwi
+├── RELATORIO_ANALISE.md      # Relatório detalhado gerado pelo pipeline
+├── run_dashboard.bat         # Script para execução simplificada
+└── README.md                 # Este documento
+```
+
+---
+
+## ✅ 5. Conclusão
+
+Este projeto representa minha abordagem para resolver um desafio de engenharia de forma completa. Busquei não apenas cumprir os requisitos, mas construir uma solução de ponta a ponta que fosse funcional, robusta e que demonstrasse o valor prático de tecnologias como IoT e Machine Learning. Desde a otimização na coleta de dados no ESP32 até a criação de um dashboard interativo para análise, cada etapa foi planejada e executada com o objetivo de entregar um resultado de alta qualidade.
+
+Agradeço pela oportunidade de desenvolver e apresentar este trabalho.
+
+---
+
+*Desenvolvido com dedicação e paixão por tecnologia por Diogo Leite Zequini Pinto - RM 565535* 
+
+
+============================================================
+ARQUIVO: RELATORIO_ANALISE.md
+============================================================
+
+# Relatório de Análise IoT - Hermes Reply
+Este relatório resume os resultados da análise de dados, do modelo preditivo e das principais descobertas.
+## Visão Geral
+- Total de registros: 11
+## Gráficos Gerados
+![Timeline](documentacao/imagens/hermes_reply_sensores_timeline.png)
+![Status](documentacao/imagens/hermes_reply_status_analysis.png)
+![Correlação](documentacao/imagens/hermes_reply_correlations.png)
+![Matriz de Confusão](documentacao/imagens/hermes_reply_confusion_matrix.png)
+![Importância das Features](documentacao/imagens/hermes_reply_feature_importance.png)
+
+
+
+============================================================
+ARQUIVO: run_dashboard.bat
+============================================================
+
+@echo off
+
+REM Verificar se o Streamlit já está instalado para evitar reinstalação desnecessária
+python -c "import streamlit" >nul 2>&1
+IF %ERRORLEVEL% NEQ 0 (
+    echo.
+    echo [HERMES] Instalando dependencias do projeto...
+    pip install -r analise_dados/requirements.txt
+    echo.
+    echo [HERMES] Dependencias instaladas com sucesso.
+) ELSE (
+    echo.
+    echo [HERMES] Dependencias ja instaladas. Pulando a etapa de instalacao.
+)
+
+echo.
+echo [HERMES] Iniciando o Dashboard de Analise Preditiva...
+echo [HERMES] A aplicacao sera aberta em seu navegador.
+echo.
+python -m streamlit run analise_dados/app.py --server.headless false 
+
+
+============================================================
+ARQUIVO: analise_dados\app.py
+============================================================
+
+# -*- coding: utf-8 -*-
+"""
+Autor: Diogo L. Zequini Pinto
+Projeto: Hermes Reply - Challenge Sprint 2
+Dashboard de BI Interativo para análise de dados e modelagem preditiva a partir de logs de telemetria IoT.
+"""
+
+import streamlit as st
+import json
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import re
+import os
+from datetime import datetime
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import confusion_matrix, ConfusionMatrixDisplay, classification_report
+import joblib
+
+# Configuração da página
+st.set_page_config(
+    page_title="HERMES Reply - Dashboard de Análise Preditiva",
+    page_icon="🏭",
+    layout="wide",
+    initial_sidebar_state="expanded"
+)
+
+class HermesReplyDataAnalyzer:
+    """
+    Classe para encapsular todo o pipeline de análise de dados,
+    desde a ingestão do log até a geração de relatórios e modelos.
+    """
+    def __init__(self, log_file='dados_simulacao/serial_output.log'):
+        self.log_file = log_file
+        self.data = []
+        self.df = None
+
+    def extract_json_data(self):
+        """
+        Extrai payloads JSON do arquivo de log serial.
+        CAPA-PY-002: Remove st.error() e lança exceção para tratamento na interface.
+        """
+        if not os.path.exists(self.log_file):
+            raise FileNotFoundError(f"Arquivo de log não encontrado: {self.log_file}")
+        
+        pattern = re.compile(r"JSON_DATA:\s*({.*})")
+        with open(self.log_file, 'r', encoding='utf-8') as f:
+            for line in f:
+                match = pattern.search(line)
+                if match:
+                    try:
+                        data_json = json.loads(match.group(1))
+                        # Achata o JSON aninhado
+                        flat = {
+                            'timestamp': data_json.get('timestamp'),
+                            'readingId': data_json.get('readingId'),
+                            'temperature': data_json['sensors']['temperature']['value'],
+                            'temperatureMA': data_json['sensors']['temperature'].get('movingAverage', data_json['sensors']['temperature']['value']),
+                            'humidity': data_json['sensors']['humidity']['value'],
+                            'humidityMA': data_json['sensors']['humidity'].get('movingAverage', data_json['sensors']['humidity']['value']),
+                            'light': data_json['sensors']['lightLevel']['value'],
+                            'vibration': data_json['sensors']['vibration']['value'],
+                            'systemStatus': data_json['analysis']['systemStatus']
+                        }
+                        self.data.append(flat)
+                    except Exception as e:
+                        # CAPA-PY-002: Não usa st.error(), apenas lança exceção
+                        raise ValueError(f"Erro ao parsear JSON: {e}")
+        return len(self.data)
+
+    def create_dataframe(self):
+        """Cria DataFrame e adiciona features"""
+        if not self.data:
+            self.extract_json_data()
+        self.df = pd.DataFrame(self.data)
+        self.df['datetime'] = pd.to_datetime(self.df['timestamp'], unit='ms')
+        self.df['time_minutes'] = (self.df['timestamp'] - self.df['timestamp'].min()) / 60000
+        
+        # === CAPA-PY-001: CORREÇÃO DA FEATURE ENGINEERING ===
+        # Janela de 10 minutos com leituras a cada 5 segundos = 120 leituras (10*60/5 = 120)
+        self.df['Rolling_Std_Dev_Vibration_10min'] = self.df['vibration'].rolling(window=120, min_periods=1).std()
+        self.df['Temp_x_Vibration_Interaction'] = self.df['temperature'] * self.df['vibration']
+        
+        return self.df
+
+    def generate_comprehensive_analysis(self):
+        """Gera análise estatística completa dos dados"""
+        if self.df is None:
+            self.create_dataframe()
+        
+        analysis = {
+            'total_records': len(self.df),
+            'temp_stats': {
+                'mean': self.df['temperature'].mean(),
+                'std': self.df['temperature'].std(),
+                'min': self.df['temperature'].min(),
+                'max': self.df['temperature'].max()
+            },
+            'humidity_stats': {
+                'mean': self.df['humidity'].mean(),
+                'std': self.df['humidity'].std(),
+                'min': self.df['humidity'].min(),
+                'max': self.df['humidity'].max()
+            },
+            'light_stats': {
+                'mean': self.df['light'].mean(),
+                'std': self.df['light'].std()
+            },
+            'vibration_stats': {
+                'mean': self.df['vibration'].mean(),
+                'std': self.df['vibration'].std()
+            },
+            'status_distribution': self.df['systemStatus'].value_counts().to_dict(),
+            'anomalies': {
+                'temp_out_of_range': len(self.df[(self.df['temperature'] < 15) | (self.df['temperature'] > 35)]),
+                'humidity_out_of_range': len(self.df[(self.df['humidity'] < 30) | (self.df['humidity'] > 70)])
+            },
+            'correlations': {
+                'temp_humidity': self.df['temperature'].corr(self.df['humidity']),
+                'vibration_temp': self.df['vibration'].corr(self.df['temperature'])
+            }
+        }
+        
+        return analysis
+
+    def plot_sensor_timeline(self):
+        """Gráfico temporal dos sensores"""
+        fig, axes = plt.subplots(2, 2, figsize=(15, 10))
+        fig.suptitle('HERMES REPLY - Monitoramento Temporal de Sensores IoT', fontsize=16, fontweight='bold')
+        
+        # Temperatura
+        axes[0,0].plot(self.df['time_minutes'], self.df['temperature'], 'o-', color='red', alpha=0.7)
+        axes[0,0].axhspan(15, 35, alpha=0.2, color='green', label='Range Normal')
+        axes[0,0].set_title('Temperatura (°C)')
+        axes[0,0].set_ylabel('Temperatura (°C)')
+        axes[0,0].grid(True, alpha=0.3)
+        axes[0,0].legend()
+        
+        # Umidade
+        axes[0,1].plot(self.df['time_minutes'], self.df['humidity'], 'o-', color='blue', alpha=0.7)
+        axes[0,1].axhspan(30, 70, alpha=0.2, color='green', label='Range Normal')
+        axes[0,1].set_title('Umidade (%)')
+        axes[0,1].set_ylabel('Umidade (%)')
+        axes[0,1].grid(True, alpha=0.3)
+        axes[0,1].legend()
+        
+        # Luminosidade
+        axes[1,0].plot(self.df['time_minutes'], self.df['light'], 'o-', color='orange', alpha=0.7)
+        axes[1,0].axhspan(200, 800, alpha=0.2, color='green', label='Range Normal')
+        axes[1,0].set_title('Luminosidade (lux)')
+        axes[1,0].set_ylabel('Luminosidade')
+        axes[1,0].set_xlabel('Tempo (minutos)')
+        axes[1,0].grid(True, alpha=0.3)
+        axes[1,0].legend()
+        
+        # Vibração
+        axes[1,1].plot(self.df['time_minutes'], self.df['vibration'], 'o-', color='purple', alpha=0.7)
+        axes[1,1].axhline(y=500, color='red', linestyle='--', alpha=0.5, label='Limite Crítico')
+        axes[1,1].set_title('Vibração (intensidade)')
+        axes[1,1].set_ylabel('Vibração')
+        axes[1,1].set_xlabel('Tempo (minutos)')
+        axes[1,1].grid(True, alpha=0.3)
+        axes[1,1].legend()
+        
+        plt.tight_layout()
+        return fig
+
+    def plot_status_analysis(self):
+        """Gráfico de análise de status do sistema"""
+        fig, axes = plt.subplots(1, 2, figsize=(15, 6))
+        fig.suptitle('HERMES REPLY - Análise de Status do Sistema', fontsize=16, fontweight='bold')
+        
+        # Distribuição de status
+        status_counts = self.df['systemStatus'].value_counts()
+        colors = {'NORMAL': 'green', 'ATENÇÃO': 'orange', 'CRÍTICO': 'red'}
+        
+        # Gráfico de pizza
+        axes[0].pie(status_counts.values, labels=status_counts.index, autopct='%1.1f%%', 
+                   colors=[colors.get(x, 'gray') for x in status_counts.index])
+        axes[0].set_title('Distribuição de Status do Sistema')
+        
+        # Timeline de status
+        status_numeric = self.df['systemStatus'].map({'NORMAL': 0, 'ATENÇÃO': 1, 'CRÍTICO': 2})
+        scatter = axes[1].scatter(self.df['time_minutes'], status_numeric, 
+                                c=status_numeric, cmap='RdYlGn_r', s=50, alpha=0.7)
+        axes[1].set_yticks([0, 1, 2])
+        axes[1].set_yticklabels(['NORMAL', 'ATENÇÃO', 'CRÍTICO'])
+        axes[1].set_xlabel('Tempo (minutos)')
+        axes[1].set_ylabel('Status do Sistema')
+        axes[1].set_title('Evolução do Status ao Longo do Tempo')
+        axes[1].grid(True, alpha=0.3)
+        
+        plt.tight_layout()
+        return fig
+
+    def plot_correlation_heatmap(self):
+        """Mapa de calor das correlações entre sensores"""
+        fig, ax = plt.subplots(figsize=(10, 8))
+        correlation = self.df[['temperature', 'humidity', 'light', 'vibration']].corr()
+        
+        sns.heatmap(correlation, annot=True, cmap='coolwarm', center=0, 
+                   square=True, fmt='.3f', cbar_kws={'label': 'Correlação'}, ax=ax)
+        
+        ax.set_title('HERMES REPLY - Mapa de Correlação entre Sensores', fontsize=14, fontweight='bold')
+        plt.tight_layout()
+        return fig
+
+    def train_predictive_model(self):
+        """Treina modelo de classificação RandomForest para prever systemStatus"""
+        if self.df is None:
+            self.create_dataframe()
+        
+        feature_cols = [
+            'temperature', 'temperatureMA', 'humidity', 'humidityMA', 'light', 'vibration',
+            'Rolling_Std_Dev_Vibration_10min', 'Temp_x_Vibration_Interaction'
+        ]
+        X = self.df[feature_cols].fillna(0)
+        y = self.df['systemStatus']
+        y_encoded = y.map({'NORMAL':0, 'ATENÇÃO':1, 'CRÍTICO':2})
+        
+        X_train, X_test, y_train, y_test = train_test_split(X, y_encoded, test_size=0.2, random_state=42, stratify=y_encoded)
+        clf = RandomForestClassifier(n_estimators=200, random_state=42)
+        clf.fit(X_train, y_train)
+        y_pred = clf.predict(X_test)
+        
+        # Definir todos os rótulos de classe possíveis
+        all_class_labels = [0, 1, 2] # NORMAL, ATENÇÃO, CRÍTICO
+        display_names = ['NORMAL', 'ATENÇÃO', 'CRÍTICO']
+
+        cm = confusion_matrix(y_test, y_pred, labels=all_class_labels)
+        
+        # Matriz de Confusão
+        fig_cm, ax_cm = plt.subplots(figsize=(8, 6))
+        disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=display_names)
+        disp.plot(cmap='Blues', ax=ax_cm)
+        ax_cm.set_title('Matriz de Confusão - Modelo Preditivo')
+        
+        # Feature importance
+        importances = pd.Series(clf.feature_importances_, index=feature_cols).sort_values(ascending=False)
+        fig_fi, ax_fi = plt.subplots(figsize=(10,6))
+        sns.barplot(x=importances, y=importances.index, ax=ax_fi)
+        ax_fi.set_title('Importância das Features')
+        ax_fi.set_xlabel('Importância')
+        plt.tight_layout()
+        
+        # Salva modelo
+        joblib.dump(clf, 'dados_simulacao/modelo_randomforest.joblib')
+        
+        return fig_cm, fig_fi, clf, cm
+
+# Interface do usuário Streamlit
+def main():
+    st.title("🏭 HERMES Reply - Dashboard de Análise Preditiva IoT")
+    st.markdown("**Autor:** Diogo Leite Zequini Pinto | **RM:** 565535")
+    
+    # Sidebar
+    st.sidebar.header("🔧 Controles do Dashboard")
+    st.sidebar.markdown("---")
+    
+    # Botão para carregar dados
+    if st.sidebar.button("📊 Carregar e Processar Dados", type="primary"):
+        with st.spinner("Carregando dados do log serial..."):
+            try:
+                analyzer = HermesReplyDataAnalyzer()
+                records_count = analyzer.extract_json_data()
+                
+                if records_count > 0:
+                    df = analyzer.create_dataframe()
+                    analysis = analyzer.generate_comprehensive_analysis()
+                    
+                    # Armazenar no session_state
+                    st.session_state.analyzer = analyzer
+                    st.session_state.df = df
+                    st.session_state.analysis = analysis
+                    st.session_state.data_loaded = True
+                    
+                    st.sidebar.success(f"✅ {records_count} registros carregados!")
+                else:
+                    st.sidebar.error("❌ Nenhum dado encontrado no log serial!")
+                    
+            # === CAPA-PY-002: TRATAMENTO DE ERRO NA INTERFACE ===
+            except FileNotFoundError as e:
+                st.sidebar.error(f"❌ Arquivo de log não encontrado! Execute a simulação Wokwi primeiro.")
+                st.error(f"**Erro de Arquivo:** {e}")
+            except ValueError as e:
+                st.sidebar.error(f"❌ Erro ao processar dados JSON!")
+                st.error(f"**Erro de Processamento:** {e}")
+            except Exception as e:
+                st.sidebar.error(f"❌ Erro inesperado ao carregar dados!")
+                st.error(f"**Erro Geral:** {e}")
+    
+    # Verificar se os dados foram carregados
+    if 'data_loaded' not in st.session_state:
+        st.info("👈 Use o botão na barra lateral para carregar os dados da simulação IoT.")
+        st.markdown("""
+        ### 📋 Instruções:
+        1. **Execute a simulação Wokwi** para gerar o arquivo `dados_simulacao/serial_output.log`
+        2. **Clique em "Carregar e Processar Dados"** na barra lateral
+        3. **Explore as abas** para visualizar as análises interativas
+        
+        ### 🔧 Melhorias Implementadas (Auditoria Técnica):
+        - **CAPA-PY-001:** Correção da janela de tempo para 10 minutos (120 leituras) na feature de desvio padrão de vibração
+        - **CAPA-PY-002:** Separação adequada de responsabilidades entre lógica de negócio e interface
+        - **CAPA-PY-003:** Remoção de dependências desnecessárias de desenvolvimento
+        """)
+        return
+    
+    # Tabs principais
+    tab1, tab2, tab3, tab4 = st.tabs(["📈 Visão Geral", "🔍 Análise de Sensores", "🤖 Análise Preditiva", "📊 Dados Brutos"])
+    
+    analyzer = st.session_state.analyzer
+    df = st.session_state.df
+    analysis = st.session_state.analysis
+    
+    with tab1:
+        st.header("📈 Visão Geral do Sistema")
+        
+        # KPIs principais
+        col1, col2, col3, col4 = st.columns(4)
+        
+        with col1:
+            st.metric(
+                label="📊 Total de Registros",
+                value=analysis['total_records']
+            )
+        
+        with col2:
+            st.metric(
+                label="🌡️ Temperatura Média",
+                value=f"{analysis['temp_stats']['mean']:.1f}°C",
+                delta=f"±{analysis['temp_stats']['std']:.1f}"
+            )
+        
+        with col3:
+            st.metric(
+                label="💧 Umidade Média", 
+                value=f"{analysis['humidity_stats']['mean']:.1f}%",
+                delta=f"±{analysis['humidity_stats']['std']:.1f}"
+            )
+        
+        with col4:
+            status_critico = analysis['status_distribution'].get('CRÍTICO', 0)
+            st.metric(
+                label="⚠️ Alertas Críticos",
+                value=status_critico,
+                delta=f"{(status_critico/analysis['total_records']*100):.1f}% do total"
+            )
+        
+        st.markdown("---")
+        
+        # Distribuição de Status
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.subheader("🚨 Distribuição de Status")
+            status_df = pd.DataFrame(list(analysis['status_distribution'].items()), 
+                                   columns=['Status', 'Quantidade'])
+            st.dataframe(status_df, use_container_width=True)
+        
+        with col2:
+            st.subheader("🔗 Correlações Principais")
+            st.info(f"**Temperatura x Umidade:** {analysis['correlations']['temp_humidity']:.3f}")
+            if not np.isnan(analysis['correlations']['vibration_temp']):
+                st.info(f"**Vibração x Temperatura:** {analysis['correlations']['vibration_temp']:.3f}")
+            else:
+                st.info("**Vibração x Temperatura:** Dados insuficientes")
+        
+        # Anomalias
+        st.subheader("🚨 Detecção de Anomalias")
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.metric(
+                label="🌡️ Temperatura Fora do Range (15-35°C)",
+                value=analysis['anomalies']['temp_out_of_range']
+            )
+        
+        with col2:
+            st.metric(
+                label="💧 Umidade Fora do Range (30-70%)",
+                value=analysis['anomalies']['humidity_out_of_range']
+            )
+    
+    with tab2:
+        st.header("🔍 Análise Detalhada de Sensores")
+        
+        # Gráfico temporal
+        st.subheader("📈 Monitoramento Temporal")
+        fig_timeline = analyzer.plot_sensor_timeline()
+        st.pyplot(fig_timeline)
+        
+        # Análise de status
+        st.subheader("📊 Análise de Status do Sistema")
+        fig_status = analyzer.plot_status_analysis()
+        st.pyplot(fig_status)
+        
+        # Correlações
+        st.subheader("🔗 Mapa de Correlações")
+        fig_corr = analyzer.plot_correlation_heatmap()
+        st.pyplot(fig_corr)
+    
+    with tab3:
+        st.header("🤖 Análise Preditiva com Machine Learning")
+        
+        st.info("**CAPA-PY-001 Implementado:** A feature 'Rolling_Std_Dev_Vibration_10min' agora usa uma janela de 120 leituras (10 minutos reais).")
+        
+        if st.button("🚀 Treinar Modelo Preditivo", type="primary"):
+            with st.spinner("Treinando modelo RandomForest..."):
+                fig_cm, fig_fi, model, cm = analyzer.train_predictive_model()
+                
+                st.success("✅ Modelo treinado com sucesso!")
+                
+                col1, col2 = st.columns(2)
+                
+                with col1:
+                    st.subheader("📊 Matriz de Confusão")
+                    st.pyplot(fig_cm)
+                
+                with col2:
+                    st.subheader("🎯 Importância das Features")
+                    st.pyplot(fig_fi)
+                
+                st.info("💾 Modelo salvo em: `dados_simulacao/modelo_randomforest.joblib`")
+    
+    with tab4:
+        st.header("📊 Dados Brutos")
+        st.subheader("🔍 DataFrame Completo")
+        st.dataframe(df, use_container_width=True)
+        
+        st.subheader("📈 Estatísticas Descritivas")
+        st.dataframe(df.describe(), use_container_width=True)
+
+if __name__ == "__main__":
+    main() 
+
+
+============================================================
+ARQUIVO: analise_dados\requirements.txt
+============================================================
+
+pandas>=1.5.0
+matplotlib>=3.6.0
+seaborn>=0.12.0
+numpy>=1.24.0
+scikit-learn>=1.3.0
+joblib>=1.3.0
+streamlit>=1.28.0 
+
+
+============================================================
+ARQUIVO: arduino\platformio.ini
+============================================================
+
+; PlatformIO Project Configuration File
+;
+;   Build process, Library management, Espressif generate_typescript_types for ESP32
+;   https://docs.platformio.org/page/projectconf.html
+
+[env:esp32dev]
+platform = espressif32
+board = esp32dev
+framework = arduino
+monitor_speed = 115200
+lib_deps =
+    dht sensor library@^1.4.6
+    bblanchon/ArduinoJson@^7.4.1
+
+[env:wokwi]
+platform = espressif32
+board = esp32dev
+framework = arduino
+monitor_speed = 115200
+board_build.partitions = default_8MB.csv
+upload_protocol = custom
+upload_port = COM4 # Porta serial do Wokwi CLI RFC2217
+upload_flags =
+    --port
+    $UPLOAD_PORT
+    --baud
+    $UPLOAD_SPEED
+build_flags = -D WOKWI
+lib_deps =
+    dht sensor library@^1.4.6
+    bblanchon/ArduinoJson@^7.4.1
+
+
+============================================================
+ARQUIVO: arduino\src\main.cpp
+============================================================
+
+// Autor: Diogo L. Zequini Pinto
+// Projeto: Hermes Reply - Challenge Sprint 2 - Firmware ESP32
+
+#include <Arduino.h>
+#include <DHT.h>
+#include <ArduinoJson.h>
+
+// === CONFIGURAÇÕES DO SISTEMA HERMES REPLY ===
+#define DEVICE_ID "HR-PRED-MAINT-01"
+#define FIRMWARE_VERSION "1.0.0"
+
+// === MAPEAMENTO DE PINOS ===
+#define DHT_PIN 27
+#define DHT_TYPE DHT22
+#define LDR_PIN 34          // Sensor de luminosidade (LDR)
+#define VIBRATION_PIN 35    // Sensor de vibração simulado
+#define LED_STATUS_PIN 2    // LED interno ESP32
+
+// === CONFIGURAÇÕES DOS SENSORES ===
+DHT dht(DHT_PIN, DHT_TYPE);
+
+// === VARIÁVEIS GLOBAIS ===
+JsonDocument telemetryData;
+unsigned long lastReading = 0;
+const unsigned long READING_INTERVAL = 5000; // 5 segundos entre leituras
+int readingCount = 0;
+
+// === LIMITES PARA ANÁLISE PREDITIVA ===
+const float TEMP_MIN_NORMAL = 15.0;
+const float TEMP_MAX_NORMAL = 35.0;
+const float HUMIDITY_MIN_NORMAL = 30.0;
+const float HUMIDITY_MAX_NORMAL = 70.0;
+const int LIGHT_MIN_NORMAL = 200;
+const int LIGHT_MAX_NORMAL = 800;
+const int VIBRATION_MAX_NORMAL = 500;
+
+// === CAPA-FW-002: OTIMIZAÇÃO DA MÉDIA MÓVEL ===
+const int MOVING_AVG_WINDOW = 12; // 1 minuto (12 leituras x 5s)
+float tempWindow[MOVING_AVG_WINDOW] = {0};
+float humWindow[MOVING_AVG_WINDOW] = {0};
+int windowIndex = 0;
+float tempSum = 0.0;  // Soma corrente para temperatura
+float humSum = 0.0;   // Soma corrente para umidade
+bool windowFilled = false; // Flag para saber se a janela foi preenchida
+
+// === CAPA-FW-003: LED NÃO-BLOQUEANTE ===
+unsigned long lastBlinkTime = 0;
+bool ledState = false;
+int blinkCount = 0;
+int maxBlinks = 0;
+unsigned long blinkInterval = 0;
+String currentLedStatus = "NORMAL";
+
+// === PROTÓTIPOS DAS FUNÇÕES ===
+void printSystemInfo();
+void analyzeSystemHealth(float temp, float humidity, int light, int vibration, char* statusResult, char* alertsResult);
+void buildTelemetryJson(float temp, float humidity, int light, int vibration, const char* status, float movAvgTemp, float movAvgHum);
+void sendTelemetryData();
+void updateStatusLED(const char* status);
+void handleLedBlinking();
+
+void setup() {
+  Serial.begin(115200);
+  
+  // Configuração dos pinos
+  pinMode(LED_STATUS_PIN, OUTPUT);
+  pinMode(LDR_PIN, INPUT);
+  pinMode(VIBRATION_PIN, INPUT);
+  
+  // Inicialização dos sensores
+  dht.begin();
+  
+  // Sequência de inicialização
+  digitalWrite(LED_STATUS_PIN, HIGH);
+  delay(1000);
+  digitalWrite(LED_STATUS_PIN, LOW);
+  
+  printSystemInfo();
+  
+  Serial.println("=== SISTEMA INICIADO - AGUARDANDO PRIMEIRA LEITURA ===");
+  Serial.println();
+}
+
+void loop() {
+  unsigned long currentTime = millis();
+  
+  if (currentTime - lastReading >= READING_INTERVAL) {
+    readingCount++;
+    
+    // Coleta de dados dos sensores
+    float temperature = dht.readTemperature();
+    float humidity = dht.readHumidity();
+    int lightLevel = analogRead(LDR_PIN);
+    int vibrationLevel = analogRead(VIBRATION_PIN);
+    
+    // Simula variações realistas se sensores não conectados
+    if (isnan(temperature)) temperature = 20.0 + random(-50, 150) / 10.0;
+    if (isnan(humidity)) humidity = 50.0 + random(-200, 300) / 10.0;
+    
+    // === CAPA-FW-002: MÉDIA MÓVEL OTIMIZADA O(1) ===
+    // Remove valor antigo da soma (se janela já foi preenchida)
+    if (windowFilled) {
+      tempSum -= tempWindow[windowIndex];
+      humSum -= humWindow[windowIndex];
+    }
+    
+    // Adiciona novo valor
+    tempWindow[windowIndex] = temperature;
+    humWindow[windowIndex] = humidity;
+    tempSum += temperature;
+    humSum += humidity;
+    
+    // Avança índice
+    windowIndex = (windowIndex + 1) % MOVING_AVG_WINDOW;
+    if (windowIndex == 0) windowFilled = true;
+    
+    // Calcula médias móveis
+    int validSamples = windowFilled ? MOVING_AVG_WINDOW : (readingCount < MOVING_AVG_WINDOW ? readingCount : MOVING_AVG_WINDOW);
+    float movingAvgTemp = tempSum / validSamples;
+    float movingAvgHum = humSum / validSamples;
+    
+    // Adiciona ruído realista aos sensores analógicos
+    lightLevel = lightLevel + random(-50, 50);
+    vibrationLevel = vibrationLevel + random(-100, 200);
+    
+    // Limita valores aos ranges sensores reais
+    lightLevel = constrain(lightLevel, 0, 1023);
+    vibrationLevel = constrain(vibrationLevel, 0, 1023);
+    
+    // === CAPA-FW-001: ANÁLISE PREDITIVA SEM String ===
+    char systemStatus[10];  // Buffer para status
+    char alerts[20];        // Buffer para alertas
+    analyzeSystemHealth(temperature, humidity, lightLevel, vibrationLevel, systemStatus, alerts);
+    
+    // Monta JSON de telemetria (inclui médias móveis)
+    buildTelemetryJson(temperature, humidity, lightLevel, vibrationLevel, systemStatus, movingAvgTemp, movingAvgHum);
+    
+    // Envia dados via Serial
+    sendTelemetryData();
+    
+    // Atualiza LED de status (não-bloqueante)
+    updateStatusLED(systemStatus);
+    
+    lastReading = currentTime;
+  }
+  
+  // === CAPA-FW-003: PROCESSA LED NÃO-BLOQUEANTE ===
+  handleLedBlinking();
+  
+  delay(100); // Pequeno delay para estabilidade
+}
+
+void printSystemInfo() {
+  Serial.println("╔══════════════════════════════════════════════════════════╗");
+  Serial.println("║            HERMES REPLY - MANUTENÇÃO PREDITIVA        ║");
+  Serial.println("║                 Monitoramento IoT Industrial                ║");
+  Serial.println("╠══════════════════════════════════════════════════════════╣");
+  Serial.print("║ ID do Dispositivo: ");
+  Serial.print(DEVICE_ID);
+  Serial.print(" | Firmware: ");
+  Serial.print(FIRMWARE_VERSION);
+  Serial.println("           ║");
+  Serial.println("║ Sensores: DHT22, LDR, Vibração, LED de Status              ║");
+  Serial.println("║ Frequência de Leitura: 5s | Formato: JSON | Análise: Preditiva     ║");
+  Serial.println("╚══════════════════════════════════════════════════════════╝");
+  Serial.println();
+}
+
+// === CAPA-FW-001: FUNÇÃO SEM String ===
+void analyzeSystemHealth(float temp, float humidity, int light, int vibration, char* statusResult, char* alertsResult) {
+  int alertCount = 0;
+  alertsResult[0] = '\0'; // Inicializa string vazia
+  
+  // Análise de temperatura
+  if (temp < TEMP_MIN_NORMAL || temp > TEMP_MAX_NORMAL) {
+    alertCount++;
+    strncat(alertsResult, "TEMP ", 19 - strlen(alertsResult));
+  }
+  
+  // Análise de umidade
+  if (humidity < HUMIDITY_MIN_NORMAL || humidity > HUMIDITY_MAX_NORMAL) {
+    alertCount++;
+    strncat(alertsResult, "UMID ", 19 - strlen(alertsResult));
+  }
+  
+  // Análise de luminosidade
+  if (light < LIGHT_MIN_NORMAL || light > LIGHT_MAX_NORMAL) {
+    alertCount++;
+    strncat(alertsResult, "LUZ ", 19 - strlen(alertsResult));
+  }
+  
+  // Análise de vibração
+  if (vibration > VIBRATION_MAX_NORMAL) {
+    alertCount++;
+    strncat(alertsResult, "VIB ", 19 - strlen(alertsResult));
+  }
+  
+  // Remove espaço final se existir
+  int len = strlen(alertsResult);
+  if (len > 0 && alertsResult[len-1] == ' ') {
+    alertsResult[len-1] = '\0';
+  }
+  
+  // Determina status geral
+  if (alertCount == 0) strcpy(statusResult, "NORMAL");
+  else if (alertCount <= 2) strcpy(statusResult, "ATENÇÃO");
+  else strcpy(statusResult, "CRÍTICO");
+}
+
+void buildTelemetryJson(float temp, float humidity, int light, int vibration, const char* status, float movAvgTemp, float movAvgHum) {
+  telemetryData.clear();
+  
+  // Metadados do dispositivo
+  telemetryData["deviceId"] = DEVICE_ID;
+  telemetryData["timestamp"] = millis();
+  telemetryData["readingId"] = readingCount;
+  telemetryData["firmwareVersion"] = FIRMWARE_VERSION;
+  
+  // Dados dos sensores
+  JsonObject sensors = telemetryData["sensors"].to<JsonObject>();
+  sensors["temperature"]["value"] = round(temp * 100) / 100.0;
+  sensors["temperature"]["movingAverage"] = round(movAvgTemp * 100) / 100.0;
+  sensors["temperature"]["unit"] = "°C";
+  sensors["temperature"]["status"] = (temp >= TEMP_MIN_NORMAL && temp <= TEMP_MAX_NORMAL) ? "OK" : "ALERTA";
+  
+  sensors["humidity"]["value"] = round(humidity * 100) / 100.0;
+  sensors["humidity"]["movingAverage"] = round(movAvgHum * 100) / 100.0;
+  sensors["humidity"]["unit"] = "%";
+  sensors["humidity"]["status"] = (humidity >= HUMIDITY_MIN_NORMAL && humidity <= HUMIDITY_MAX_NORMAL) ? "OK" : "ALERTA";
+  
+  sensors["lightLevel"]["value"] = light;
+  sensors["lightLevel"]["unit"] = "lux";
+  sensors["lightLevel"]["status"] = (light >= LIGHT_MIN_NORMAL && light <= LIGHT_MAX_NORMAL) ? "OK" : "ALERTA";
+  
+  sensors["vibration"]["value"] = vibration;
+  sensors["vibration"]["unit"] = "intensidade";
+  sensors["vibration"]["status"] = (vibration <= VIBRATION_MAX_NORMAL) ? "OK" : "ALERTA";
+  
+  // Análise preditiva
+  JsonObject analysis = telemetryData["analysis"].to<JsonObject>();
+  analysis["systemStatus"] = status;
+  analysis["riskLevel"] = (strcmp(status, "CRÍTICO") == 0) ? "ALTO" : (strcmp(status, "ATENÇÃO") == 0) ? "MÉDIO" : "BAIXO";
+  analysis["nextMaintenance"] = (strcmp(status, "CRÍTICO") == 0) ? "IMEDIATA" : (strcmp(status, "ATENÇÃO") == 0) ? "24H" : "AGENDADA";
+  
+  // === CAPA-FW-001: DETALHE DE STATUS SEM String ===
+  char statusDetail[25];
+  statusDetail[0] = '\0'; // Inicializa string vazia
+  
+  if (sensors["temperature"]["status"] == "ALERTA") strncat(statusDetail, "TEMP,", 24 - strlen(statusDetail));
+  if (sensors["humidity"]["status"] == "ALERTA") strncat(statusDetail, "HUMID,", 24 - strlen(statusDetail));
+  if (sensors["lightLevel"]["status"] == "ALERTA") strncat(statusDetail, "LIGHT,", 24 - strlen(statusDetail));
+  if (sensors["vibration"]["status"] == "ALERTA") strncat(statusDetail, "VIB,", 24 - strlen(statusDetail));
+  
+  // Remove vírgula final se existir
+  int len = strlen(statusDetail);
+  if (len > 0 && statusDetail[len-1] == ',') {
+    statusDetail[len-1] = '\0';
+  }
+  
+  analysis["statusDetail"] = statusDetail;
+  
+  // Estatísticas operacionais
+  JsonObject stats = telemetryData["operationalStats"].to<JsonObject>();
+  stats["uptime"] = millis();
+  stats["totalReadings"] = readingCount;
+  stats["avgTemperature"] = movAvgTemp;
+  stats["avgHumidity"] = movAvgHum;
+}
+
+void sendTelemetryData() {
+  Serial.println("┌─────────────────────────────────────────────────────────────┐");
+  Serial.print("│ LEITURA #");
+  Serial.print(readingCount);
+  Serial.print(" | ");
+  Serial.print(millis()/1000);
+  Serial.println("s de funcionamento                               │");
+  Serial.println("├─────────────────────────────────────────────────────────────┤");
+  
+  // Saída JSON para análise
+  Serial.print("JSON_DATA: ");
+  serializeJson(telemetryData, Serial);
+  Serial.println();
+  
+  // Saída humanizada para monitoramento
+  Serial.print("│ Temp: ");
+  Serial.print(telemetryData["sensors"]["temperature"]["value"].as<float>(), 1);
+  Serial.print("°C | Umidade: ");
+  Serial.print(telemetryData["sensors"]["humidity"]["value"].as<float>(), 1);
+  Serial.print("% | Luz: ");
+  Serial.print(telemetryData["sensors"]["lightLevel"]["value"].as<int>());
+  Serial.print(" | Vib: ");
+  Serial.print(telemetryData["sensors"]["vibration"]["value"].as<int>());
+  Serial.println(" │");
+  
+  Serial.print("│ STATUS: ");
+  Serial.print(telemetryData["analysis"]["systemStatus"].as<String>());
+  Serial.print(" | RISCO: ");
+  Serial.print(telemetryData["analysis"]["riskLevel"].as<String>());
+  Serial.print(" | MANUTENÇÃO: ");
+  Serial.print(telemetryData["analysis"]["nextMaintenance"].as<String>());
+  Serial.println("     │");
+  
+  Serial.println("└─────────────────────────────────────────────────────────────┘");
+  Serial.println();
+}
+
+// === CAPA-FW-003: LED NÃO-BLOQUEANTE ===
+void updateStatusLED(const char* status) {
+  // Só atualiza se o status mudou
+  if (strcmp(currentLedStatus.c_str(), status) != 0) {
+    currentLedStatus = status;
+    blinkCount = 0;
+    ledState = false;
+    digitalWrite(LED_STATUS_PIN, LOW);
+    
+    if (strcmp(status, "NORMAL") == 0) {
+      maxBlinks = 1;
+      blinkInterval = 100;
+    } else if (strcmp(status, "ATENÇÃO") == 0) {
+      maxBlinks = 2;
+      blinkInterval = 150;
+    } else { // CRÍTICO
+      maxBlinks = 5;
+      blinkInterval = 100;
+    }
+    
+    lastBlinkTime = millis();
+  }
+}
+
+void handleLedBlinking() {
+  unsigned long currentTime = millis();
+  
+  if (blinkCount < maxBlinks && (currentTime - lastBlinkTime >= blinkInterval)) {
+    ledState = !ledState;
+    digitalWrite(LED_STATUS_PIN, ledState ? HIGH : LOW);
+    
+    if (!ledState) { // Completou um ciclo de piscar
+      blinkCount++;
+    }
+    
+    lastBlinkTime = currentTime;
+  }
+}
+
+
+============================================================
+ARQUIVO: dados_simulacao\hermes_reply_data_20250613_123249.csv
+============================================================
+
+timestamp,readingId,temperature,humidity,light,vibration,status,time_minutes,datetime
+5110,1,26.6,78.4,1023,1023,CRITICAL,0.08516666666666667,1970-01-01 00:00:05.110
+10141,2,24.8,61.0,1023,1023,ATTENTION,0.16901666666666668,1970-01-01 00:00:10.141
+15171,3,22.4,68.9,1023,1023,ATTENTION,0.25285,1970-01-01 00:00:15.171
+20201,4,28.2,36.2,1023,1023,ATTENTION,0.33668333333333333,1970-01-01 00:00:20.201
+25231,5,21.7,49.0,1023,1023,ATTENTION,0.42051666666666665,1970-01-01 00:00:25.231
+30261,6,23.5,32.3,1023,1023,ATTENTION,0.50435,1970-01-01 00:00:30.261
+35291,7,24.7,49.3,1023,1023,ATTENTION,0.5881833333333333,1970-01-01 00:00:35.291
+40321,8,30.4,31.0,1023,1023,ATTENTION,0.6720166666666667,1970-01-01 00:00:40.321
+45351,9,30.2,75.1,1023,1023,CRITICAL,0.75585,1970-01-01 00:00:45.351
+50382,10,33.8,72.6,1023,1023,CRITICAL,0.8397,1970-01-01 00:00:50.382
+55413,11,28.2,62.1,1023,1023,ATTENTION,0.92355,1970-01-01 00:00:55.413
+60413,12,23.3,49.7,988,214,NORMAL,1.0068833333333334,1970-01-01 00:01:00.413
+65413,13,18.3,22.9,679,190,ATTENTION,1.0902166666666666,1970-01-01 00:01:05.413
+70413,14,16.2,59.3,599,170,NORMAL,1.17355,1970-01-01 00:01:10.413
+75413,15,12.8,54.4,906,628,ATTENTION,1.2568833333333334,1970-01-01 00:01:15.413
+80413,16,10.0,85.0,904,418,CRITICAL,1.3402166666666666,1970-01-01 00:01:20.413
+85413,17,9.6,57.6,1001,702,ATTENTION,1.42355,1970-01-01 00:01:25.413
+90413,18,10.0,85.0,669,498,CRITICAL,1.5068833333333334,1970-01-01 00:01:30.413
+95413,19,20.1,58.4,459,245,NORMAL,1.5902166666666666,1970-01-01 00:01:35.413
+100413,20,45.0,85.0,202,729,CRITICAL,1.67355,1970-01-01 00:01:40.413
+105413,21,25.1,65.7,562,998,NORMAL,1.7568833333333334,1970-01-01 00:01:45.413
+110413,22,28.6,70.3,962,478,ATTENTION,1.8402166666666666,1970-01-01 00:01:50.413
+115413,23,10.0,85.0,217,388,CRITICAL,1.92355,1970-01-01 00:01:55.413
+120413,24,29.0,74.8,505,369,ATTENTION,2.006883333333333,1970-01-01 00:02:00.413
+125413,25,17.3,57.5,260,483,NORMAL,2.0902166666666666,1970-01-01 00:02:05.413
+130413,26,19.2,60.4,822,618,NORMAL,2.17355,1970-01-01 00:02:10.413
+135413,27,21.4,34.3,436,439,NORMAL,2.256883333333333,1970-01-01 00:02:15.413
+140413,28,10.0,15.0,663,591,CRITICAL,2.3402166666666666,1970-01-01 00:02:20.413
+145413,29,45.0,15.0,947,779,CRITICAL,2.42355,1970-01-01 00:02:25.413
+150413,30,15.8,37.9,264,973,NORMAL,2.506883333333333,1970-01-01 00:02:30.413
+155413,31,10.0,15.0,901,944,CRITICAL,2.5902166666666666,1970-01-01 00:02:35.413
+160413,32,22.8,45.3,833,184,NORMAL,2.67355,1970-01-01 00:02:40.413
+165413,33,17.2,69.0,728,653,NORMAL,2.756883333333333,1970-01-01 00:02:45.413
+170413,34,18.3,64.9,975,478,NORMAL,2.8402166666666666,1970-01-01 00:02:50.413
+175413,35,10.0,15.0,592,778,CRITICAL,2.92355,1970-01-01 00:02:55.413
+180413,36,30.2,52.7,408,411,NORMAL,3.006883333333333,1970-01-01 00:03:00.413
+185413,37,19.4,66.9,421,932,NORMAL,3.0902166666666666,1970-01-01 00:03:05.413
+190413,38,28.1,36.8,201,603,NORMAL,3.17355,1970-01-01 00:03:10.413
+195413,39,23.0,75.2,957,836,ATTENTION,3.256883333333333,1970-01-01 00:03:15.413
+200413,40,20.7,26.1,582,578,ATTENTION,3.3402166666666666,1970-01-01 00:03:20.413
+205413,41,25.0,58.1,943,371,NORMAL,3.42355,1970-01-01 00:03:25.413
+210413,42,18.6,49.5,870,830,NORMAL,3.506883333333333,1970-01-01 00:03:30.413
+215413,43,21.5,52.7,240,796,NORMAL,3.5902166666666666,1970-01-01 00:03:35.413
+220413,44,22.0,72.5,553,870,ATTENTION,3.67355,1970-01-01 00:03:40.413
+225413,45,16.8,47.0,971,126,NORMAL,3.756883333333333,1970-01-01 00:03:45.413
+230413,46,13.3,74.4,431,196,ATTENTION,3.8402166666666666,1970-01-01 00:03:50.413
+235413,47,22.6,26.2,610,207,ATTENTION,3.92355,1970-01-01 00:03:55.413
+240413,48,10.0,85.0,621,1016,CRITICAL,4.006883333333334,1970-01-01 00:04:00.413
+245413,49,17.8,14.4,655,913,ATTENTION,4.090216666666667,1970-01-01 00:04:05.413
+
+
+
+============================================================
+ARQUIVO: dados_simulacao\hermes_reply_data_20250613_124210.csv
+============================================================
+
+timestamp,readingId,temperature,humidity,light,vibration,status,time_minutes,datetime
+5110,1,26.6,78.4,1023,1023,CRÍTICO,0.08516666666666667,1970-01-01 00:00:05.110
+10141,2,24.8,61.0,1023,1023,ATENÇÃO,0.16901666666666668,1970-01-01 00:00:10.141
+15171,3,22.4,68.9,1023,1023,ATENÇÃO,0.25285,1970-01-01 00:00:15.171
+20201,4,28.2,36.2,1023,1023,ATENÇÃO,0.33668333333333333,1970-01-01 00:00:20.201
+25231,5,21.7,49.0,1023,1023,ATENÇÃO,0.42051666666666665,1970-01-01 00:00:25.231
+30261,6,23.5,32.3,1023,1023,ATENÇÃO,0.50435,1970-01-01 00:00:30.261
+35291,7,24.7,49.3,1023,1023,ATENÇÃO,0.5881833333333333,1970-01-01 00:00:35.291
+40321,8,30.4,31.0,1023,1023,ATENÇÃO,0.6720166666666667,1970-01-01 00:00:40.321
+45351,9,30.2,75.1,1023,1023,CRÍTICO,0.75585,1970-01-01 00:00:45.351
+50382,10,33.8,72.6,1023,1023,CRÍTICO,0.8397,1970-01-01 00:00:50.382
+55413,11,28.2,62.1,1023,1023,ATENÇÃO,0.92355,1970-01-01 00:00:55.413
+60413,12,17.1,52.1,267,235,NORMAL,1.0068833333333334,1970-01-01 00:01:00.413
+65413,13,10.0,15.0,362,779,CRÍTICO,1.0902166666666666,1970-01-01 00:01:05.413
+70413,14,21.0,43.1,826,528,NORMAL,1.17355,1970-01-01 00:01:10.413
+75413,15,14.9,74.8,901,907,ATENÇÃO,1.2568833333333334,1970-01-01 00:01:15.413
+80413,16,28.8,58.8,900,415,NORMAL,1.3402166666666666,1970-01-01 00:01:20.413
+85413,17,24.8,46.6,503,319,NORMAL,1.42355,1970-01-01 00:01:25.413
+90413,18,21.4,56.5,218,708,NORMAL,1.5068833333333334,1970-01-01 00:01:30.413
+95413,19,21.8,21.0,564,125,ATENÇÃO,1.5902166666666666,1970-01-01 00:01:35.413
+100413,20,23.1,48.3,601,165,NORMAL,1.67355,1970-01-01 00:01:40.413
+105413,21,23.3,61.6,294,531,NORMAL,1.7568833333333334,1970-01-01 00:01:45.413
+110413,22,18.3,48.6,875,510,NORMAL,1.8402166666666666,1970-01-01 00:01:50.413
+115413,23,18.2,47.6,493,584,NORMAL,1.92355,1970-01-01 00:01:55.413
+120413,24,23.8,46.2,400,481,NORMAL,2.006883333333333,1970-01-01 00:02:00.413
+125413,25,24.2,55.4,941,504,NORMAL,2.0902166666666666,1970-01-01 00:02:05.413
+130413,26,18.1,47.9,623,190,NORMAL,2.17355,1970-01-01 00:02:10.413
+135413,27,16.1,66.3,362,645,NORMAL,2.256883333333333,1970-01-01 00:02:15.413
+140413,28,45.0,85.0,567,568,CRÍTICO,2.3402166666666666,1970-01-01 00:02:20.413
+145413,29,18.6,39.3,546,228,NORMAL,2.42355,1970-01-01 00:02:25.413
+150413,30,19.7,45.0,334,756,NORMAL,2.506883333333333,1970-01-01 00:02:30.413
+155413,31,10.0,15.0,428,691,CRÍTICO,2.5902166666666666,1970-01-01 00:02:35.413
+160413,32,45.0,15.0,808,714,CRÍTICO,2.67355,1970-01-01 00:02:40.413
+165413,33,15.7,47.7,296,936,NORMAL,2.756883333333333,1970-01-01 00:02:45.413
+170413,34,18.3,52.6,354,977,NORMAL,2.8402166666666666,1970-01-01 00:02:50.413
+175413,35,19.0,54.8,418,298,NORMAL,2.92355,1970-01-01 00:02:55.413
+180413,36,45.0,15.0,953,296,CRÍTICO,3.006883333333333,1970-01-01 00:03:00.413
+185413,37,24.8,56.8,407,868,NORMAL,3.0902166666666666,1970-01-01 00:03:05.413
+190413,38,18.4,32.4,407,183,NORMAL,3.17355,1970-01-01 00:03:10.413
+195413,39,45.0,15.0,652,182,CRÍTICO,3.256883333333333,1970-01-01 00:03:15.413
+200413,40,45.0,15.0,316,386,CRÍTICO,3.3402166666666666,1970-01-01 00:03:20.413
+205413,41,13.5,32.5,483,156,ATENÇÃO,3.42355,1970-01-01 00:03:25.413
+210413,42,27.0,39.1,814,443,NORMAL,3.506883333333333,1970-01-01 00:03:30.413
+215413,43,16.9,76.2,287,328,ATENÇÃO,3.5902166666666666,1970-01-01 00:03:35.413
+220413,44,20.8,39.5,843,963,NORMAL,3.67355,1970-01-01 00:03:40.413
+225413,45,25.8,54.0,278,1023,NORMAL,3.756883333333333,1970-01-01 00:03:45.413
+230413,46,10.0,15.0,372,606,CRÍTICO,3.8402166666666666,1970-01-01 00:03:50.413
+235413,47,10.0,15.0,817,509,CRÍTICO,3.92355,1970-01-01 00:03:55.413
+240413,48,10.0,85.0,829,928,CRÍTICO,4.006883333333334,1970-01-01 00:04:00.413
+245413,49,16.7,45.5,979,1019,NORMAL,4.090216666666667,1970-01-01 00:04:05.413
+
+
+
+============================================================
+ARQUIVO: dados_simulacao\hermes_reply_summary_20250613_123249.csv
+============================================================
+
+,timestamp,readingId,temperature,humidity,light,vibration,time_minutes,datetime
+count,49.0,49.0,49.0,49.0,49.0,49.0,49.0,49
+mean,125378.91836734694,25.0,21.397959183673464,53.791836734693874,730.4081632653061,671.1224489795918,2.0896486394557825,1970-01-01 00:02:05.378918367
+min,5110.0,1.0,9.6,14.4,201.0,126.0,0.08516666666666667,1970-01-01 00:00:05.110000
+25%,65413.0,13.0,16.8,36.8,553.0,418.0,1.0902166666666666,1970-01-01 00:01:05.413000
+50%,125413.0,25.0,21.5,57.6,822.0,702.0,2.0902166666666666,1970-01-01 00:02:05.413000
+75%,185413.0,37.0,25.1,70.3,988.0,998.0,3.0902166666666666,1970-01-01 00:03:05.413000
+max,245413.0,49.0,45.0,85.0,1023.0,1023.0,4.090216666666667,1970-01-01 00:04:05.413000
+std,71494.57828594322,14.288690166235206,8.159465101849467,21.33770954529693,277.219070890345,305.34950143599525,1.1915763047657204,
+
+
+
+============================================================
+ARQUIVO: dados_simulacao\hermes_reply_summary_20250613_124210.csv
+============================================================
+
+,timestamp,readingId,temperature,humidity,light,vibration,time_minutes,datetime
+count,49.0,49.0,49.0,49.0,49.0,49.0,49.0,49
+mean,125378.91836734694,25.0,23.25714285714286,46.859183673469396,664.7142857142857,651.7755102040817,2.0896486394557825,1970-01-01 00:02:05.378918367
+min,5110.0,1.0,10.0,15.0,218.0,125.0,0.08516666666666667,1970-01-01 00:00:05.110000
+25%,65413.0,13.0,18.1,32.5,400.0,386.0,1.0902166666666666,1970-01-01 00:01:05.413000
+50%,125413.0,25.0,21.8,47.9,623.0,645.0,2.0902166666666666,1970-01-01 00:02:05.413000
+75%,185413.0,37.0,26.6,58.8,953.0,1019.0,3.0902166666666666,1970-01-01 00:03:05.413000
+max,245413.0,49.0,45.0,85.0,1023.0,1023.0,4.090216666666667,1970-01-01 00:04:05.413000
+std,71494.57828594322,14.288690166235206,9.31683064852707,19.943440007173486,286.66501937511197,317.4019051419747,1.1915763047657204,
+
+
+
+============================================================
+ARQUIVO: dados_simulacao\serial_output.log
+============================================================
+
+ets Jul 29 2019 12:21:46
+
+rst:0x1 (POWERON_RESET),boot:0x13 (SPI_FAST_FLASH_BOOT)
+configsip: 0, SPIWP:0xee
+clk_drv:0x00,q_drv:0x00,d_drv:0x00,cs0_drv:0x00,hd_drv:0x00,wp_drv:0x00
+mode:DIO, clock div:2
+load:0x3fff0030,len:1156
+load:0x40078000,len:11456
+ho 0 tail 12 room 4
+load:0x40080400,len:2972
+entry 0x400805dc
+╔══════════════════════════════════════════════════════════╗
+║            HERMES REPLY - MANUTENÇÃO PREDITIVA        ║
+║                 Monitoramento IoT Industrial                ║
+╠══════════════════════════════════════════════════════════╣
+║ ID do Dispositivo: HR-PRED-MAINT-01 | Firmware: 1.0.0           ║
+║ Sensores: DHT22, LDR, Vibração, LED de Status              ║
+║ Frequência de Leitura: 5s | Formato: JSON | Análise: Preditiva     ║
+╚══════════════════════════════════════════════════════════╝
+
+=== SISTEMA INICIADO - AGUARDANDO PRIMEIRA LEITURA ===
+
+┌─────────────────────────────────────────────────────────────┐
+│ LEITURA #1 | 5s de funcionamento                               │
+├─────────────────────────────────────────────────────────────┤
+JSON_DATA: {"deviceId":"HR-PRED-MAINT-01","timestamp":5111,"readingId":1,"firmwareVersion":"1.0.0","sensors":{"temperature":{"value":31.3,"movingAverage":2.61,"unit":"°C","status":"OK"},"humidity":{"value":60.1,"movingAverage":5.01,"unit":"%","status":"OK"},"lightLevel":{"value":1023,"unit":"lux","status":"ALERTA"},"vibration":{"value":1023,"unit":"intensidade","status":"ALERTA"}},"analysis":{"systemStatus":"ATENÇÃO","riskLevel":"MÉDIO","nextMaintenance":"24H","statusDetail":"LIGHT,VIB"},"operationalStats":{"uptime":5115,"totalReadings":1,"avgTemperature":2.608333,"avgHumidity":5.008333}}
+│ Temp: 31.3°C | Umidade: 60.1% | Luz: 1023 | Vib: 1023 │
+│ STATUS: ATENÇÃO | RISCO: MÉDIO | MANUTENÇÃO: 24H     │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ LEITURA #2 | 10s de funcionamento                               │
+├─────────────────────────────────────────────────────────────┤
+JSON_DATA: {"deviceId":"HR-PRED-MAINT-01","timestamp":10148,"readingId":2,"firmwareVersion":"1.0.0","sensors":{"temperature":{"value":22.9,"movingAverage":4.52,"unit":"°C","status":"OK"},"humidity":{"value":47.6,"movingAverage":8.97,"unit":"%","status":"OK"},"lightLevel":{"value":1023,"unit":"lux","status":"ALERTA"},"vibration":{"value":1023,"unit":"intensidade","status":"ALERTA"}},"analysis":{"systemStatus":"ATENÇÃO","riskLevel":"MÉDIO","nextMaintenance":"24H","statusDetail":"LIGHT,VIB"},"operationalStats":{"uptime":10151,"totalReadings":2,"avgTemperature":4.516666,"avgHumidity":8.974999}}
+│ Temp: 22.9°C | Umidade: 47.6% | Luz: 1023 | Vib: 1023 │
+│ STATUS: ATENÇÃO | RISCO: MÉDIO | MANUTENÇÃO: 24H     │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ LEITURA #3 | 15s de funcionamento                               │
+├─────────────────────────────────────────────────────────────┤
+JSON_DATA: {"deviceId":"HR-PRED-MAINT-01","timestamp":15184,"readingId":3,"firmwareVersion":"1.0.0","sensors":{"temperature":{"value":24.7,"movingAverage":6.57,"unit":"°C","status":"OK"},"humidity":{"value":73.1,"movingAverage":15.07,"unit":"%","status":"ALERTA"},"lightLevel":{"value":1023,"unit":"lux","status":"ALERTA"},"vibration":{"value":1023,"unit":"intensidade","status":"ALERTA"}},"analysis":{"systemStatus":"CRÍTICO","riskLevel":"ALTO","nextMaintenance":"IMEDIATA","statusDetail":"HUMID,LIGHT,VIB"},"operationalStats":{"uptime":15187,"totalReadings":3,"avgTemperature":6.574999,"avgHumidity":15.06667}}
+│ Temp: 24.7°C | Umidade: 73.1% | Luz: 1023 | Vib: 1023 │
+│ STATUS: CRÍTICO | RISCO: ALTO | MANUTENÇÃO: IMEDIATA     │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ LEITURA #4 | 20s de funcionamento                               │
+├─────────────────────────────────────────────────────────────┤
+JSON_DATA: {"deviceId":"HR-PRED-MAINT-01","timestamp":20221,"readingId":4,"firmwareVersion":"1.0.0","sensors":{"temperature":{"value":25.6,"movingAverage":8.71,"unit":"°C","status":"OK"},"humidity":{"value":42.5,"movingAverage":18.61,"unit":"%","status":"OK"},"lightLevel":{"value":1023,"unit":"lux","status":"ALERTA"},"vibration":{"value":1023,"unit":"intensidade","status":"ALERTA"}},"analysis":{"systemStatus":"ATENÇÃO","riskLevel":"MÉDIO","nextMaintenance":"24H","statusDetail":"LIGHT,VIB"},"operationalStats":{"uptime":20224,"totalReadings":4,"avgTemperature":8.708333,"avgHumidity":18.60833}}
+│ Temp: 25.6°C | Umidade: 42.5% | Luz: 1023 | Vib: 1023 │
+│ STATUS: ATENÇÃO | RISCO: MÉDIO | MANUTENÇÃO: 24H     │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ LEITURA #5 | 25s de funcionamento                               │
+├─────────────────────────────────────────────────────────────┤
+JSON_DATA: {"deviceId":"HR-PRED-MAINT-01","timestamp":25257,"readingId":5,"firmwareVersion":"1.0.0","sensors":{"temperature":{"value":21.4,"movingAverage":10.49,"unit":"°C","status":"OK"},"humidity":{"value":67.5,"movingAverage":24.23,"unit":"%","status":"OK"},"lightLevel":{"value":1023,"unit":"lux","status":"ALERTA"},"vibration":{"value":1023,"unit":"intensidade","status":"ALERTA"}},"analysis":{"systemStatus":"ATENÇÃO","riskLevel":"MÉDIO","nextMaintenance":"24H","statusDetail":"LIGHT,VIB"},"operationalStats":{"uptime":25260,"totalReadings":5,"avgTemperature":10.49167,"avgHumidity":24.23333}}
+│ Temp: 21.4°C | Umidade: 67.5% | Luz: 1023 | Vib: 1023 │
+│ STATUS: ATENÇÃO | RISCO: MÉDIO | MANUTENÇÃO: 24H     │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ LEITURA #6 | 30s de funcionamento                               │
+├─────────────────────────────────────────────────────────────┤
+JSON_DATA: {"deviceId":"HR-PRED-MAINT-01","timestamp":30293,"readingId":6,"firmwareVersion":"1.0.0","sensors":{"temperature":{"value":18.5,"movingAverage":12.03,"unit":"°C","status":"OK"},"humidity":{"value":60.1,"movingAverage":29.24,"unit":"%","status":"OK"},"lightLevel":{"value":1023,"unit":"lux","status":"ALERTA"},"vibration":{"value":1023,"unit":"intensidade","status":"ALERTA"}},"analysis":{"systemStatus":"ATENÇÃO","riskLevel":"MÉDIO","nextMaintenance":"24H","statusDetail":"LIGHT,VIB"},"operationalStats":{"uptime":30296,"totalReadings":6,"avgTemperature":12.03333,"avgHumidity":29.24167}}
+│ Temp: 18.5°C | Umidade: 60.1% | Luz: 1023 | Vib: 1023 │
+│ STATUS: ATENÇÃO | RISCO: MÉDIO | MANUTENÇÃO: 24H     │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ LEITURA #7 | 35s de funcionamento                               │
+├─────────────────────────────────────────────────────────────┤
+JSON_DATA: {"deviceId":"HR-PRED-MAINT-01","timestamp":35329,"readingId":7,"firmwareVersion":"1.0.0","sensors":{"temperature":{"value":33.3,"movingAverage":14.81,"unit":"°C","status":"OK"},"humidity":{"value":58,"movingAverage":34.08,"unit":"%","status":"OK"},"lightLevel":{"value":1023,"unit":"lux","status":"ALERTA"},"vibration":{"value":1023,"unit":"intensidade","status":"ALERTA"}},"analysis":{"systemStatus":"ATENÇÃO","riskLevel":"MÉDIO","nextMaintenance":"24H","statusDetail":"LIGHT,VIB"},"operationalStats":{"uptime":35332,"totalReadings":7,"avgTemperature":14.80833,"avgHumidity":34.075}}
+│ Temp: 33.3°C | Umidade: 58.0% | Luz: 1023 | Vib: 1023 │
+│ STATUS: ATENÇÃO | RISCO: MÉDIO | MANUTENÇÃO: 24H     │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ LEITURA #8 | 40s de funcionamento                               │
+├─────────────────────────────────────────────────────────────┤
+JSON_DATA: {"deviceId":"HR-PRED-MAINT-01","timestamp":40365,"readingId":8,"firmwareVersion":"1.0.0","sensors":{"temperature":{"value":33,"movingAverage":17.56,"unit":"°C","status":"OK"},"humidity":{"value":56.7,"movingAverage":38.8,"unit":"%","status":"OK"},"lightLevel":{"value":1023,"unit":"lux","status":"ALERTA"},"vibration":{"value":1023,"unit":"intensidade","status":"ALERTA"}},"analysis":{"systemStatus":"ATENÇÃO","riskLevel":"MÉDIO","nextMaintenance":"24H","statusDetail":"LIGHT,VIB"},"operationalStats":{"uptime":40368,"totalReadings":8,"avgTemperature":17.55833,"avgHumidity":38.8}}
+│ Temp: 33.0°C | Umidade: 56.7% | Luz: 1023 | Vib: 1023 │
+│ STATUS: ATENÇÃO | RISCO: MÉDIO | MANUTENÇÃO: 24H     │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ LEITURA #9 | 45s de funcionamento                               │
+├─────────────────────────────────────────────────────────────┤
+JSON_DATA: {"deviceId":"HR-PRED-MAINT-01","timestamp":45401,"readingId":9,"firmwareVersion":"1.0.0","sensors":{"temperature":{"value":17.6,"movingAverage":19.03,"unit":"°C","status":"OK"},"humidity":{"value":73.5,"movingAverage":44.93,"unit":"%","status":"ALERTA"},"lightLevel":{"value":1023,"unit":"lux","status":"ALERTA"},"vibration":{"value":1023,"unit":"intensidade","status":"ALERTA"}},"analysis":{"systemStatus":"CRÍTICO","riskLevel":"ALTO","nextMaintenance":"IMEDIATA","statusDetail":"HUMID,LIGHT,VIB"},"operationalStats":{"uptime":45404,"totalReadings":9,"avgTemperature":19.025,"avgHumidity":44.925}}
+│ Temp: 17.6°C | Umidade: 73.5% | Luz: 1023 | Vib: 1023 │
+│ STATUS: CRÍTICO | RISCO: ALTO | MANUTENÇÃO: IMEDIATA     │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ LEITURA #10 | 50s de funcionamento                               │
+├─────────────────────────────────────────────────────────────┤
+JSON_DATA: {"deviceId":"HR-PRED-MAINT-01","timestamp":50438,"readingId":10,"firmwareVersion":"1.0.0","sensors":{"temperature":{"value":26.7,"movingAverage":21.25,"unit":"°C","status":"OK"},"humidity":{"value":44.2,"movingAverage":48.61,"unit":"%","status":"OK"},"lightLevel":{"value":1023,"unit":"lux","status":"ALERTA"},"vibration":{"value":1023,"unit":"intensidade","status":"ALERTA"}},"analysis":{"systemStatus":"ATENÇÃO","riskLevel":"MÉDIO","nextMaintenance":"24H","statusDetail":"LIGHT,VIB"},"operationalStats":{"uptime":50441,"totalReadings":10,"avgTemperature":21.25,"avgHumidity":48.60833}}
+│ Temp: 26.7°C | Umidade: 44.2% | Luz: 1023 | Vib: 1023 │
+│ STATUS: ATENÇÃO | RISCO: MÉDIO | MANUTENÇÃO: 24H     │
+└─────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────┐
+│ LEITURA #11 | 55s de funcionamento                               │
+├─────────────────────────────────────────────────────────────┤
+JSON_DATA: {"deviceId":"HR-PRED-MAINT-01","timestamp":55474,"readingId":11,"firmwareVersion":"1.0.0","sensors":{"temperature":{"value":19.8,"movingAverage":22.9,"unit":"°C","status":"OK"},"humidity":{"value":69.1,"movingAverage":54.37,"unit":"%","status":"OK"},"lightLevel":{"value":1023,"unit":"lux","status":"ALERTA"},"vibration":{"value":1023,"unit":"intensidade","status":"ALERTA"}},"analysis":{"systemStatus":"ATENÇÃO","riskLevel":"MÉDIO","nextMaintenance":"24H","statusDetail":"LIGHT,VIB"},"operationalStats":{"uptime":55477,"totalReadings":11,"avgTemperature":22.9,"avgHumidity":54.36666}}
+│ Temp: 19.8°C | Umidade: 69.1% | Luz: 1023 | Vib: 1023 │
+│ STATUS: ATENÇÃO | RISCO: MÉDIO | MANUTENÇÃO: 24H     │
+└─────────────────────────────────────────────────────────────┘
+
+
+
+
+============================================================
+ARQUIVO: documentacao\todos_os_codigos.txt
+============================================================
+
+### Conteúdo do arquivo: wokwi.toml
+```toml
+[wokwi]
+version = 1
+elf = ".pio/build/wokwi/firmware.elf"
+firmware = ".pio/build/wokwi/firmware.bin"
+diagram = "diagram.json"
+rfc2217ServerPort = 4001
+```
+
+### Conteúdo do arquivo: diagram.json
+```json
+{
+  "version": 1,
+  "author": "Diogo Zequini - Hermes Reply Challenge",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-dht22", "id": "dht22", "top": -150, "left": 200, "attrs": {} },
+    { "type": "wokwi-photoresistor-sensor", "id": "ldr", "top": -50, "left": 350, "attrs": {} },
+    { "type": "wokwi-slide-potentiometer", "id": "vibration", "top": 100, "left": 350, "attrs": {} },
+    { "type": "wokwi-resistor", "id": "r1", "top": 50, "left": 250, "attrs": { "value": "10000" } },
+    { "type": "wokwi-resistor", "id": "r2", "top": 150, "left": 450, "attrs": { "value": "10000" } }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "dht22:VCC", "esp:3V3", "red", [ "h0" ] ],
+    [ "dht22:GND", "esp:GND", "black", [ "h0" ] ],
+    [ "dht22:SDA", "esp:D27", "green", [ "h0" ] ],
+    [ "ldr:VCC", "esp:3V3", "red", [ "h0" ] ],
+    [ "ldr:GND", "r1:1", "black", [ "h0" ] ],
+    [ "r1:2", "esp:GND", "black", [ "h0" ] ],
+    [ "ldr:DO", "esp:D34", "yellow", [ "h0" ] ],
+    [ "vibration:VCC", "esp:3V3", "red", [ "h0" ] ],
+    [ "vibration:GND", "r2:1", "black", [ "h0" ] ],
+    [ "r2:2", "esp:GND", "black", [ "h0" ] ],
+    [ "vibration:SIG", "esp:D35", "orange", [ "h0" ] ]
+  ],
+  "dependencies": {}
+}
+```
+
+### Conteúdo do arquivo: platformio.ini
+```ini
+; PlatformIO Project Configuration File
+;
+;   Build options: build flags, source filter
+;   Upload options: custom upload port, speed and extra flags
+;   Library options: dependencies, extra library storages
+;   Advanced options: extra scripting
+;
+; Please visit documentation for the other options and examples
+; https://docs.platformio.org/page/projectconf.html
+
+[platformio]
+default_envs = wokwi # <--- Padronizado para 'wokwi'
+
+[env:wokwi] # <--- O nome do ambiente agora é 'wokwi'
+platform = espressif32
+board = esp32dev
+framework = arduino
+monitor_speed = 115200
+lib_deps = 
+    adafruit/Adafruit NeoPixel@^1.12.0
+    adafruit/DHT sensor library@^1.4.6
+    bblanchon/ArduinoJson@^7.0.4
+monitor_raw = yes
+```
+
+### Conteúdo do arquivo: src/main.cpp
+```cpp
+#include <Arduino.h>
+#include <DHT.h>
+#include <ArduinoJson.h>
+
+// === CONFIGURAÇÕES DO SISTEMA HERMES REPLY ===
+#define DEVICE_ID "HR-PRED-MAINT-01"
+#define FIRMWARE_VERSION "1.0.0"
+
+// === MAPEAMENTO DE PINOS ===
+#define DHT_PIN 27
+#define DHT_TYPE DHT22
+#define LDR_PIN 34          // Sensor de luminosidade (LDR)
+#define VIBRATION_PIN 35    // Sensor de vibração simulado
+#define LED_STATUS_PIN 2    // LED interno ESP32
+
+// === CONFIGURAÇÕES DOS SENSORES ===
+DHT dht(DHT_PIN, DHT_TYPE);
+
+// === VARIÁVEIS GLOBAIS ===
+JsonDocument telemetryData;
+unsigned long lastReading = 0;
+const unsigned long READING_INTERVAL = 5000; // 5 segundos entre leituras
+int readingCount = 0;
+
+// === LIMITES PARA ANÁLISE PREDITIVA ===
+const float TEMP_MIN_NORMAL = 15.0;
+const float TEMP_MAX_NORMAL = 35.0;
+const float HUMIDITY_MIN_NORMAL = 30.0;
+const float HUMIDITY_MAX_NORMAL = 70.0;
+const int LIGHT_MIN_NORMAL = 200;
+const int LIGHT_MAX_NORMAL = 800;
+const int VIBRATION_MAX_NORMAL = 500;
+
+// === PROTÓTIPOS DAS FUNÇÕES ===
+void printSystemInfo();
+String analyzeSystemHealth(float temp, float humidity, int light, int vibration);
+void buildTelemetryJson(float temp, float humidity, int light, int vibration, String status);
+void sendTelemetryData();
+void updateStatusLED(String status);
+
+void setup() {
+  Serial.begin(115200);
+  
+  // Configuração dos pinos
+  pinMode(LED_STATUS_PIN, OUTPUT);
+  pinMode(LDR_PIN, INPUT);
+  pinMode(VIBRATION_PIN, INPUT);
+  
+  // Inicialização dos sensores
+  dht.begin();
+  
+  // Sequência de inicialização
+  digitalWrite(LED_STATUS_PIN, HIGH);
+  delay(1000);
+  digitalWrite(LED_STATUS_PIN, LOW);
+  
+  printSystemInfo();
+  
+  Serial.println("=== SISTEMA INICIADO - AGUARDANDO PRIMEIRA LEITURA ===");
+  Serial.println();
+}
+
+void loop() {
+  unsigned long currentTime = millis();
+  
+  if (currentTime - lastReading >= READING_INTERVAL) {
+    readingCount++;
+    
+    // Coleta de dados dos sensores
+    float temperature = dht.readTemperature();
+    float humidity = dht.readHumidity();
+    int lightLevel = analogRead(LDR_PIN);
+    int vibrationLevel = analogRead(VIBRATION_PIN);
+    
+    // Simula variações realistas se sensores não conectados
+    if (isnan(temperature)) temperature = 20.0 + random(-50, 150) / 10.0;
+    if (isnan(humidity)) humidity = 50.0 + random(-200, 300) / 10.0;
+    
+    // Adiciona ruído realista aos sensores analógicos
+    lightLevel = lightLevel + random(-50, 50);
+    vibrationLevel = vibrationLevel + random(-100, 200);
+    
+    // Limita valores aos ranges sensores reais
+    lightLevel = constrain(lightLevel, 0, 1023);
+    vibrationLevel = constrain(vibrationLevel, 0, 1023);
+    
+    // Análise preditiva básica
+    String systemStatus = analyzeSystemHealth(temperature, humidity, lightLevel, vibrationLevel);
+    
+    // Monta JSON de telemetria
+    buildTelemetryJson(temperature, humidity, lightLevel, vibrationLevel, systemStatus);
+    
+    // Envia dados via Serial
+    sendTelemetryData();
+    
+    // Atualiza LED de status
+    updateStatusLED(systemStatus);
+    
+    lastReading = currentTime;
+  }
+  
+  delay(100); // Pequeno delay para estabilidade
+}
+
+void printSystemInfo() {
+  Serial.println("╔══════════════════════════════════════════════════════════╗");
+  Serial.println("║            HERMES REPLY - PREDICTIVE MAINTENANCE        ║");
+  Serial.println("║                 Industrial IoT Monitoring                ║");
+  Serial.println("╠══════════════════════════════════════════════════════════╣");
+  Serial.print("║ Device ID: ");
+  Serial.print(DEVICE_ID);
+  Serial.print(" | Firmware: ");
+  Serial.print(FIRMWARE_VERSION);
+  Serial.println("           ║");
+  Serial.println("║ Sensores: DHT22, LDR, Vibração, Status LED              ║");
+  Serial.println("║ Frequência: 5s | Formato: JSON | Análise: Preditiva     ║");
+  Serial.println("╚══════════════════════════════════════════════════════════╝");
+  Serial.println();
+}
+
+String analyzeSystemHealth(float temp, float humidity, int light, int vibration) {
+  int alertCount = 0;
+  String alerts = "";
+  
+  // Análise de temperatura
+  if (temp < TEMP_MIN_NORMAL || temp > TEMP_MAX_NORMAL) {
+    alertCount++;
+    alerts += "TEMP ";
+  }
+  
+  // Análise de umidade
+  if (humidity < HUMIDITY_MIN_NORMAL || humidity > HUMIDITY_MAX_NORMAL) {
+    alertCount++;
+    alerts += "HUM ";
+  }
+  
+  // Análise de luminosidade
+  if (light < LIGHT_MIN_NORMAL || light > LIGHT_MAX_NORMAL) {
+    alertCount++;
+    alerts += "LIGHT ";
+  }
+  
+  // Análise de vibração
+  if (vibration > VIBRATION_MAX_NORMAL) {
+    alertCount++;
+    alerts += "VIB ";
+  }
+  
+  // Determina status geral
+  if (alertCount == 0) return "NORMAL";
+  else if (alertCount <= 2) return "ATTENTION";
+  else return "CRITICAL";
+}
+
+void buildTelemetryJson(float temp, float humidity, int light, int vibration, String status) {
+  telemetryData.clear();
+  
+  // Metadados do dispositivo
+  telemetryData["deviceId"] = DEVICE_ID;
+  telemetryData["timestamp"] = millis();
+  telemetryData["readingId"] = readingCount;
+  telemetryData["firmwareVersion"] = FIRMWARE_VERSION;
+  
+  // Dados dos sensores
+  JsonObject sensors = telemetryData["sensors"].to<JsonObject>();
+  sensors["temperature"]["value"] = round(temp * 100) / 100.0;
+  sensors["temperature"]["unit"] = "°C";
+  sensors["temperature"]["status"] = (temp >= TEMP_MIN_NORMAL && temp <= TEMP_MAX_NORMAL) ? "OK" : "ALERT";
+  
+  sensors["humidity"]["value"] = round(humidity * 100) / 100.0;
+  sensors["humidity"]["unit"] = "%";
+  sensors["humidity"]["status"] = (humidity >= HUMIDITY_MIN_NORMAL && humidity <= HUMIDITY_MAX_NORMAL) ? "OK" : "ALERT";
+  
+  sensors["lightLevel"]["value"] = light;
+  sensors["lightLevel"]["unit"] = "lux";
+  sensors["lightLevel"]["status"] = (light >= LIGHT_MIN_NORMAL && light <= LIGHT_MAX_NORMAL) ? "OK" : "ALERT";
+  
+  sensors["vibration"]["value"] = vibration;
+  sensors["vibration"]["unit"] = "intensity";
+  sensors["vibration"]["status"] = (vibration <= VIBRATION_MAX_NORMAL) ? "OK" : "ALERT";
+  
+  // Análise preditiva
+  JsonObject analysis = telemetryData["analysis"].to<JsonObject>();
+  analysis["systemStatus"] = status;
+  analysis["riskLevel"] = (status == "CRITICAL") ? "HIGH" : (status == "ATTENTION") ? "MEDIUM" : "LOW";
+  analysis["nextMaintenance"] = (status == "CRITICAL") ? "IMMEDIATE" : (status == "ATTENTION") ? "24H" : "SCHEDULED";
+  
+  // Estatísticas operacionais
+  JsonObject stats = telemetryData["operationalStats"].to<JsonObject>();
+  stats["uptime"] = millis();
+  stats["totalReadings"] = readingCount;
+  stats["avgTemperature"] = temp; // Simplificado para esta demo
+  stats["avgHumidity"] = humidity;
+}
+
+void sendTelemetryData() {
+  Serial.println("┌─────────────────────────────────────────────────────────────┐");
+  Serial.print("│ READING #");
+  Serial.print(readingCount);
+  Serial.print(" | ");
+  Serial.print(millis()/1000);
+  Serial.println("s uptime                               │");
+  Serial.println("├─────────────────────────────────────────────────────────────┤");
+  
+  // Saída JSON para análise
+  Serial.print("JSON_DATA: ");
+  serializeJson(telemetryData, Serial);
+  Serial.println();
+  
+  // Saída humanizada para monitoramento
+  Serial.print("│ Temp: ");
+  Serial.print(telemetryData["sensors"]["temperature"]["value"].as<float>(), 1);
+  Serial.print("°C | Umidade: ");
+  Serial.print(telemetryData["sensors"]["humidity"]["value"].as<float>(), 1);
+  Serial.print("% | Luz: ");
+  Serial.print(telemetryData["sensors"]["lightLevel"]["value"].as<int>());
+  Serial.print(" | Vib: ");
+  Serial.print(telemetryData["sensors"]["vibration"]["value"].as<int>());
+  Serial.println(" │");
+  
+  Serial.print("│ STATUS: ");
+  Serial.print(telemetryData["analysis"]["systemStatus"].as<String>());
+  Serial.print(" | RISCO: ");
+  Serial.print(telemetryData["analysis"]["riskLevel"].as<String>());
+  Serial.print(" | MANUTENÇÃO: ");
+  Serial.print(telemetryData["analysis"]["nextMaintenance"].as<String>());
+  Serial.println("     │");
+  
+  Serial.println("└─────────────────────────────────────────────────────────────┘");
+  Serial.println();
+}
+
+void updateStatusLED(String status) {
+  if (status == "NORMAL") {
+    digitalWrite(LED_STATUS_PIN, HIGH);
+    delay(100);
+    digitalWrite(LED_STATUS_PIN, LOW);
+  } else if (status == "ATTENTION") {
+    for (int i = 0; i < 2; i++) {
+      digitalWrite(LED_STATUS_PIN, HIGH);
+      delay(150);
+      digitalWrite(LED_STATUS_PIN, LOW);
+      delay(150);
+    }
+  } else { // CRITICAL
+    for (int i = 0; i < 5; i++) {
+      digitalWrite(LED_STATUS_PIN, HIGH);
+      delay(100);
+      digitalWrite(LED_STATUS_PIN, LOW);
+      delay(100);
+    }
+  }
+}
+```
+
+
+
+
+============================================================
+ARQUIVO: include\README
+============================================================
+
+
+This directory is intended for project header files.
+
+A header file is a file containing C declarations and macro definitions
+to be shared between several project source files. You request the use of a
+header file in your project source file (C, C++, etc) located in `src` folder
+by including it, with the C preprocessing directive `#include'.
+
+```src/main.c
+
+#include "header.h"
+
+int main (void)
+{
+ ...
+}
+```
+
+Including a header file produces the same results as copying the header file
+into each source file that needs it. Such copying would be time-consuming
+and error-prone. With a header file, the related declarations appear
+in only one place. If they need to be changed, they can be changed in one
+place, and programs that include the header file will automatically use the
+new version when next recompiled. The header file eliminates the labor of
+finding and changing all the copies as well as the risk that a failure to
+find one copy will result in inconsistencies within a program.
+
+In C, the convention is to give header files names that end with `.h'.
+
+Read more about using header files in official GCC documentation:
+
+* Include Syntax
+* Include Operation
+* Once-Only Headers
+* Computed Includes
+
+https://gcc.gnu.org/onlinedocs/cpp/Header-Files.html
+
+
+
+============================================================
+ARQUIVO: lib\README
+============================================================
+
+
+This directory is intended for project specific (private) libraries.
+PlatformIO will compile them to static libraries and link into the executable file.
+
+The source code of each library should be placed in a separate directory
+("lib/your_library_name/[Code]").
+
+For example, see the structure of the following example libraries `Foo` and `Bar`:
+
+|--lib
+|  |
+|  |--Bar
+|  |  |--docs
+|  |  |--examples
+|  |  |--src
+|  |     |- Bar.c
+|  |     |- Bar.h
+|  |  |- library.json (optional. for custom build options, etc) https://docs.platformio.org/page/librarymanager/config.html
+|  |
+|  |--Foo
+|  |  |- Foo.c
+|  |  |- Foo.h
+|  |
+|  |- README --> THIS FILE
+|
+|- platformio.ini
+|--src
+   |- main.c
+
+Example contents of `src/main.c` using Foo and Bar:
+```
+#include <Foo.h>
+#include <Bar.h>
+
+int main (void)
+{
+  ...
+}
+
+```
+
+The PlatformIO Library Dependency Finder will find automatically dependent
+libraries by scanning project source files.
+
+More information about PlatformIO Library Dependency Finder
+- https://docs.platformio.org/page/librarymanager/ldf.html
+
+
+
+============================================================
+ARQUIVO: simulacao_wokwi\diagram.json
+============================================================
+
+{
+  "version": 1,
+  "author": "Diogo Zequini - Hermes Reply Challenge",
+  "editor": "wokwi",
+  "parts": [
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 0, "left": 0, "attrs": {} },
+    { "type": "wokwi-dht22", "id": "dht22", "top": -150, "left": 200, "attrs": {} },
+    { "type": "wokwi-photoresistor-sensor", "id": "ldr", "top": -50, "left": 350, "attrs": {} },
+    { "type": "wokwi-slide-potentiometer", "id": "vibration", "top": 100, "left": 350, "attrs": {} },
+    { "type": "wokwi-resistor", "id": "r1", "top": 50, "left": 250, "attrs": { "value": "10000" } },
+    { "type": "wokwi-resistor", "id": "r2", "top": 150, "left": 450, "attrs": { "value": "10000" } }
+  ],
+  "connections": [
+    [ "esp:TX", "$serialMonitor:RX", "", [] ],
+    [ "esp:RX", "$serialMonitor:TX", "", [] ],
+    [ "dht22:VCC", "esp:3V3", "red", [ "h0" ] ],
+    [ "dht22:GND", "esp:GND", "black", [ "h0" ] ],
+    [ "dht22:SDA", "esp:D27", "green", [ "h0" ] ],
+    [ "ldr:VCC", "esp:3V3", "red", [ "h0" ] ],
+    [ "ldr:GND", "r1:1", "black", [ "h0" ] ],
+    [ "r1:2", "esp:GND", "black", [ "h0" ] ],
+    [ "ldr:DO", "esp:D34", "yellow", [ "h0" ] ],
+    [ "vibration:VCC", "esp:3V3", "red", [ "h0" ] ],
+    [ "vibration:GND", "r2:1", "black", [ "h0" ] ],
+    [ "r2:2", "esp:GND", "black", [ "h0" ] ],
+    [ "vibration:SIG", "esp:D35", "orange", [ "h0" ] ]
+  ],
+  "dependencies": {}
+}
+
+
+============================================================
+ARQUIVO: simulacao_wokwi\wokwi.toml
+============================================================
+
+[wokwi]
+version = 1
+firmware = "firmware.bin"
+elf = "../arduino/.pio/build/wokwi/firmware.elf"
+debugPort = 4000
+rfc2217ServerPort = 4001
+diagram = "diagram.json"
+
+
+============================================================
+ARQUIVO: test\README
+============================================================
+
+
+This directory is intended for PlatformIO Test Runner and project tests.
+
+Unit Testing is a software testing method by which individual units of
+source code, sets of one or more MCU program modules together with associated
+control data, usage procedures, and operating procedures, are tested to
+determine whether they are fit for use. Unit testing finds problems early
+in the development cycle.
+
+More information about PlatformIO Unit Testing:
+- https://docs.platformio.org/en/latest/advanced/unit-testing/index.html
+
+
